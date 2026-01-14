@@ -1,8 +1,14 @@
 package pl.pg.pwta.pwta2d3dmodels.ui
 
+import pl.pg.pwta.pwta2d3dmodels.model.*
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,9 +19,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import pl.pg.pwta.pwta2d3dmodels.model.*
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,8 +104,51 @@ fun RenderSurface(
 }
 @Composable
 fun Render2D(asset: ImageAsset) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Obraz 2D: ${asset.base.fileName}")
+    val context = LocalContext.current
+    val uri = Uri.parse(asset.base.uri!!)
+    val imageBitmap by remember(uri) {
+        mutableStateOf(
+            if (asset.imageInfo.isVector)
+                loadSvgBitmap(context, uri)
+            else
+                loadRasterBitmap(context, uri)
+        )
+    }
+    var scale by remember { mutableFloatStateOf(1f) }
+    var rotation by remember { mutableFloatStateOf(0f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    val transformState = rememberTransformableState { zoom, pan, rotate ->
+        scale = (scale * zoom).coerceIn(0.2f, 10f)
+        rotation += rotate
+        offset += pan
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .transformable(transformState)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        scale = 1f
+                        rotation = 0f
+                        offset = Offset.Zero
+                    }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            bitmap = imageBitmap,
+            contentDescription = asset.base.fileName,
+            modifier = Modifier.graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                rotationZ = rotation
+                translationX = offset.x
+                translationY = offset.y
+            }
+        )
     }
 }
 

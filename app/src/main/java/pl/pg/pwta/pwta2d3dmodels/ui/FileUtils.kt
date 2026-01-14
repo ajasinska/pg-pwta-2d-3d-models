@@ -1,6 +1,7 @@
 package pl.pg.pwta.pwta2d3dmodels.ui
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.OpenableColumns
 import pl.pg.pwta.pwta2d3dmodels.model.AssetInfo
@@ -10,6 +11,9 @@ import java.util.Date
 import pl.pg.pwta.pwta2d3dmodels.model.ModelFormat
 import pl.pg.pwta.pwta2d3dmodels.model.ModelInfo
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.exifinterface.media.ExifInterface
 import java.text.SimpleDateFormat
 import java.util.*
@@ -292,4 +296,29 @@ fun getBaseInfo(
         isReadable = isReadable,
         isWritable = isWritable
     )
+}
+
+fun loadRasterBitmap(
+    context: Context,
+    uri: Uri
+): ImageBitmap {
+    val bitmap = context.contentResolver.openInputStream(uri)?.use {
+        BitmapFactory.decodeStream(it)
+    }
+    return bitmap!!.asImageBitmap()
+}
+
+fun loadSvgBitmap(
+    context: Context,
+    uri: Uri,
+    sizePx: Int = 2048
+): ImageBitmap {
+    val svg = context.contentResolver.openInputStream(uri)?.use {
+        SVG.getFromInputStream(it)
+    }
+    val picture = svg!!.renderToPicture()
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    canvas.drawPicture(picture)
+    return bitmap.asImageBitmap()
 }
