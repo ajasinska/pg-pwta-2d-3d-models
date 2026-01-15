@@ -173,17 +173,29 @@ fun Render3D(
             uri = uri,
             fileName = asset.base.fileName
         )
-        val modelInstance = sceneView.modelLoader
-            .createModelInstance(modelFile)
-        val modelNode = ModelNode(
-            modelInstance = modelInstance,
-            scaleToUnits = 1.0f,
-            centerOrigin = Position(0f, -1f, 0f)
-        )
-        sceneView.addChildNode(modelNode)
+        var modelNode: ModelNode? = null
+
+        runCatching {
+            val modelInstance = sceneView.modelLoader
+                .createModelInstance(modelFile)
+            modelNode = ModelNode(
+                modelInstance = modelInstance,
+                scaleToUnits = 1.0f,
+                centerOrigin = Position(0f, -1f, 0f)
+            )
+            sceneView.addChildNode(modelNode)
+        }
+
         onDispose {
-            sceneView.removeChildNode(modelNode)
-            modelNode.destroy()
+            runCatching {
+                modelNode?.let { node ->
+                    sceneView.removeChildNode(node)
+                    node.destroy()
+                }
+            }
+            runCatching {
+                sceneView.destroy()
+            }
         }
     }
     AndroidView(
