@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ import io.github.sceneview.math.Position
 fun MainScreen() {
     var selectedAsset by remember { mutableStateOf<AssetInfo?>(null) }
     var showInfoDialog by remember { mutableStateOf(false) }
+    var showModelMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val openFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -43,26 +45,57 @@ fun MainScreen() {
             selectedAsset = loadAsset(context, uri)
         }
     }
+
+    // Lista predefinowanych modeli
+    val predefinedModels = listOf(
+        "models/2d_image.jpg",
+        "models/2d_vector.svg",
+        "models/2d_image.png",
+        "models/3d_cube.glb",
+    )
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("2D / 3D Model Viewer") },
-                actions = {
-                    IconButton(
-                        onClick = { showInfoDialog = true },
-                        enabled = selectedAsset != null
+            topBar = {
+                Box{
+                    TopAppBar(
+                        title = { Text("2D / 3D Model Viewer") },
+                        actions = {
+                            IconButton(
+                                onClick = { showInfoDialog = true },
+                                enabled = selectedAsset != null
+                            ) {
+                                Icon(Icons.Rounded.Info, contentDescription = "Informacje o pliku")
+                            }
+                            IconButton(
+                                onClick = { openFileLauncher.launch(arrayOf("*/*")) }
+                            ) {
+                                Icon(Icons.Rounded.AddCircle, contentDescription = "Otwórz plik")
+                            }
+                            IconButton(
+                                onClick = { showModelMenu = true }
+                            ) {
+                                Icon(Icons.Rounded.List, contentDescription = "Wybierz model")
+                            }
+                        }
+                    )
+                    DropdownMenu(
+                        expanded = showModelMenu,
+                        onDismissRequest = { showModelMenu = false }
                     ) {
-                        Icon(Icons.Rounded.Info, contentDescription = "Informacje o pliku")
-                    }
-                    IconButton(
-                        onClick = { openFileLauncher.launch(arrayOf("*/*")) }
-                    ) {
-                        Icon(Icons.Rounded.AddCircle, contentDescription = "Otwórz plik")
+                        predefinedModels.forEach { modelName ->
+                            DropdownMenuItem(
+                                text = { Text(modelName) },
+                                onClick = {
+                                    showModelMenu = false
+                                    println("Wybrano: $modelName")
+                                    selectedAsset = loadAssetFromAssets(context, modelName)
+                                }
+                            )
+                        }
                     }
                 }
-            )
-        }
-    ) { padding ->
+            }
+            ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

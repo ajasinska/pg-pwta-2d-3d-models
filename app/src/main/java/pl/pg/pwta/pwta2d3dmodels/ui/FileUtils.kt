@@ -26,7 +26,8 @@ fun loadAsset(
     context: Context,
     uri: Uri
 ): AssetInfo {
-    val baseInfo = getBaseInfo(context, uri);
+    val baseInfo = getBaseInfo(context, uri)
+
     return when (baseInfo.format) {
         ModelFormat.PNG,
         ModelFormat.JPEG,
@@ -254,6 +255,15 @@ fun getBaseInfo(
             }
         }
     }
+
+    if (fileName == "unknown") {
+        // Nie wiem dlaczego ale nazwa pliku nie może być zgodna z rzeczywistością
+        fileName = " "
+        uri.lastPathSegment?.let { segment ->
+            fileName += segment.substringAfterLast('/')
+        }
+    }
+
     mimeType = resolver.getType(uri)
     val extension = fileName
         .substringAfterLast('.', "")
@@ -270,6 +280,7 @@ fun getBaseInfo(
         "stl" -> ModelFormat.STL
         else -> ModelFormat.UNKNOWN
     }
+
     val isReadable = try {
         resolver.openInputStream(uri)?.close()
         true
@@ -282,6 +293,7 @@ fun getBaseInfo(
     } catch (_: Exception) {
         false
     }
+
     return ModelInfo(
         fileName = fileName,
         filePath = uri.toString(),
@@ -336,4 +348,21 @@ fun copyUriToCacheFile(
         }
     }
     return outFile
+}
+
+fun loadAssetFromAssets(
+    context: Context,
+    assetPath: String
+): AssetInfo {
+    val fileName = assetPath.substringAfterLast("/")
+    val outFile = File(context.cacheDir, fileName)
+
+    context.assets.open(assetPath).use { input ->
+        outFile.outputStream().use { output ->
+            input.copyTo(output)
+        }
+    }
+
+    val uri = Uri.fromFile(outFile)
+    return loadAsset(context, uri)
 }
