@@ -200,6 +200,14 @@ fun Render3D(
     val sceneView = remember {
         SceneView(context)
     }
+
+    DisposableEffect(sceneView) {
+        onDispose {
+            runCatching {
+                sceneView.destroy()
+            }
+        }
+    }
     DisposableEffect(asset.base.uri) {
         val uri = Uri.parse(asset.base.uri!!)
         val modelFile = copyUriToCacheFile(
@@ -217,7 +225,7 @@ fun Render3D(
                 scaleToUnits = 1.0f,
                 centerOrigin = Position(0f, -1f, 0f)
             )
-            sceneView.addChildNode(modelNode)
+            sceneView.addChildNode(modelNode!!)
         }
 
         onDispose {
@@ -226,9 +234,6 @@ fun Render3D(
                     sceneView.removeChildNode(node)
                     node.destroy()
                 }
-            }
-            runCatching {
-                sceneView.destroy()
             }
         }
     }
