@@ -53,7 +53,6 @@ fun MainScreen() {
         "models/2d_house.png",
         "models/3d_cube.glb",
         "models/3d_house.glb",
-        "models/3d_house.gltf",
     )
 
     Scaffold(
